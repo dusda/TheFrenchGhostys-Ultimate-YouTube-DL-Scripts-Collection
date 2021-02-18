@@ -1,0 +1,21 @@
+FROM python:alpine as build
+
+ENV source https://github.com/pukkandan/yt-dlp
+ENV repo https://dl-cdn.alpinelinux.org/alpine/edge
+WORKDIR /app
+
+RUN apk add git
+RUN git clone ${source} .
+
+RUN echo @edge ${repo}/main >> /etc/apk/repositories && \
+    echo @community ${repo}/community >> /etc/apk/repositories && \
+    echo @testing ${repo}/testing >> /etc/apk/repositories
+RUN apk add make pandoc@testing py3-nose zip
+RUN make
+
+FROM python:alpine as runtime
+
+COPY --from=build /app/youtube-dlc /usr/local/bin/youtube-dlc
+RUN chmod +x /usr/local/bin/youtube-dlc
+
+ENTRYPOINT [ "youtube-dlc" ]
